@@ -6,7 +6,7 @@
 // and calls back through window.KeymapTransport. Swapping this one file moves
 // the same editor to another host:
 //
-//   this file          HammerGhost webview  -> hammerspoon:// URL bridge
+//   this file          Hammerspoon webview  -> hammerspoon:// URL bridge
 //   Phase 2 (artifact) claude.ai artifact    -> claude.use("db") / downloads
 //   Phase 3 (http)     browser tab           -> fetch('/api/bindings')
 //
@@ -56,7 +56,9 @@
     }
 
     window.KeymapTransport = {
-        name: 'hammerghost',
+        name: 'webview',
+        // The bridge answers keymapData/Save/Delete/Reload and nothing else.
+        canBrowse: false,
         // Whether the host can apply a change to the live keyboard. The artifact
         // surface cannot (it is sandboxed away from the machine), so the editor
         // words its confirmation differently there.

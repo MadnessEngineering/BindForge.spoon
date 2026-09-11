@@ -62,6 +62,7 @@
 
     window.KeymapTransport = {
         name: 'http',
+        canBrowse: false,
         appliesLive: true,
 
         requestData: function () {

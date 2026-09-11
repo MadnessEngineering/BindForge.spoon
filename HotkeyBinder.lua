@@ -7,16 +7,16 @@
 -- they are the two halves of one file format.
 -- Applies the declarative binding table in hotkeys.json.
 --
--- Why this exists: hotkeys.lua used to be ~150 hs.hotkey.bind calls, each
--- closing over an inline Lua function. Nothing outside Lua could read a binding,
--- and nothing at all could rewrite one -- editing a hotkey meant editing source.
--- This module makes a binding DATA: addressable by id, serialisable to JSON, and
--- rebindable at runtime. The keymap editor surfaces (HammerGhost tab, artifact,
--- httpserver) are all just editors for that same file.
+-- Why this exists: a hotkey config is normally a wall of hs.hotkey.bind calls,
+-- each closing over an inline Lua function. Nothing outside Lua can read a
+-- binding that way, and nothing at all can rewrite one -- changing a hotkey
+-- means changing source. This module makes a binding DATA: addressable by id,
+-- stored as JSON, and rebindable at runtime. Every editor surface in this spoon
+-- is just a front end for that one file.
 
--- Singleton (mirrors action_system.lua). hotkeys.lua require()s this module, but
--- the HammerGhost keymap UI dofile()s its scripts -- and dofile does NOT consult
--- package.loaded. A second copy starts with an empty `handles` table, so
+-- Singleton. A config require()s this module while the editor surfaces dofile()
+-- their scripts, and dofile does NOT consult package.loaded. A second copy
+-- starts with an empty `handles` table, so
 -- applyAll() cannot delete the hotkeys the first copy owns: instead of replacing
 -- them it stacks a second binding on every combo, and Hammerspoon silently
 -- shadows the old one (deleting the new one later RE-ENABLES the stale one).
@@ -47,8 +47,8 @@ HotkeyBinder.path = hs.configdir .. "/hotkeys.json"
 HotkeyBinder.actionSystem = nil
 
 --- Resolve it, preferring what the host registered and falling back to the
---- global HammerGhost's action_system has always stashed itself on, so that
---- config keeps working without changes.
+--- the legacy global an earlier host stashed itself on, so configs written
+--- against that keep working unchanged.
 function HotkeyBinder.getActionSystem()
     return HotkeyBinder.actionSystem or rawget(_G, "_HammerGhostActionSystem")
 end
@@ -72,14 +72,14 @@ HotkeyBinder.errors = {}   -- load/bind problems, surfaced to the keymap UI
 -- Path resolution
 -- ─────────────────────────────────────────────────────────────────────────────
 
---- Resolve "WindowManager.applyLayout" or "spoon.KineticLatch:toggle" against
---- the global table. Returns fn, selfObj, err.
+--- Resolve "WindowManager.applyLayout" or "spoon.Something:toggle" against the
+--- global table. Returns fn, selfObj, err.
 ---
---- Deliberately resolved AT PRESS TIME, not at bind time. init.lua dofiles
---- hotkeys.lua (line 52) BEFORE loadSpoon("HammerGhost") (line 55), so spoon.*
---- and the action system genuinely do not exist while bindings are created.
---- Late resolution also means a module reloaded in the console is picked up
---- without rebinding anything.
+--- Deliberately resolved AT PRESS TIME, not at bind time. A config commonly
+--- binds its keys before the Spoons those keys call have been loaded, so the
+--- targets genuinely do not exist yet while bindings are created. Late
+--- resolution also means a module reloaded in the console is picked up without
+--- rebinding anything.
 local function resolvePath(path)
     if type(path) ~= "string" or path == "" then
         return nil, nil, "empty function path"
@@ -129,11 +129,12 @@ local function reportFailure(binding, msg)
 end
 
 --- Build the press handler for a binding. Two action kinds:
----   call   - dotted path into the loaded modules (everything migrated from
----            hotkeys.lua lands here)
----   action - hand off to HammerGhost's action_system, which brings the whole
----            macro vocabulary (runShell, mqttPublish, httpRequest, ...) to any
----            key without new Lua
+---   call   - a dotted path to a function in a loaded module, plus optional
+---            args. This is what almost every binding uses.
+---   action - hand off to a host-registered action system (see
+---            HotkeyBinder.actionSystem), which can give a key a whole macro
+---            vocabulary without new Lua. Absent one, the editor does not offer
+---            this kind and a binding using it reports a clean failure.
 local function makeHandler(binding)
     return function()
         local action = binding.action or {}

@@ -1,4 +1,5 @@
-// Shared param-widget renderer for HammerGhost editors. Used by the popup editors
+// Shared param-widget renderer: typed inputs for an action's parameters.
+// Optional -- the editor falls back to a raw JSON box without it. Used by the popup editors
 // (action_editor.js / condition_editor.js) AND the inline properties panel
 // (app.js), so the same param def renders identically everywhere. Inlined ahead of
 // those scripts (see editor_window.lua / webview.lua); exposed on window.HG so the

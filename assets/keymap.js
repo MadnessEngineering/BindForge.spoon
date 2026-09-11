@@ -6,7 +6,7 @@
 //
 // Pure renderer. It never talks to a host directly: everything goes through
 // window.KeymapTransport (see keymap_transport_hs.js), which is the only file
-// that changes between the HammerGhost window, the artifact and the HTTP
+// that changes between the webview window, the artifact and the HTTP
 // surface. Keep it that way — a stray hammerspoon:// in here forks the editor.
 //
 // The host pushes data in by calling window.Keymap.render(data).
@@ -513,11 +513,14 @@
             if (!typeSel.value || !def) { return; }
             if (usingWidgets) {
                 window.HG.renderParams(paramHost, def.parameters || {}, values || {});
-                // The app/file widgets add a Browse button that drives a native
-                // picker over the hammerspoon:// bridge. Only the HammerGhost
-                // window can answer that, so elsewhere the button would be a
-                // dead control -- the text input beside it still works.
-                if (!window.KeymapTransport || window.KeymapTransport.name !== 'hammerghost') {
+                // The app/file widgets add a Browse button that needs the host
+                // to answer a native-picker request. A transport says whether
+                // its host can, because asking "which host is this" gets the
+                // answer wrong the moment the same transport is reused: the
+                // webview bridge here handles data/save/delete/reload and
+                // nothing else, so the button would be a dead control. The
+                // text input beside it still works either way.
+                if (!window.KeymapTransport || !window.KeymapTransport.canBrowse) {
                     Array.prototype.forEach.call(
                         paramHost.querySelectorAll('.browse-btn'),
                         function (b) { b.remove(); });
@@ -947,7 +950,7 @@
 
     loadZoom();
 
-    // Page-load handshake, mirroring the other HammerGhost editors: the page
+    // Page-load handshake: the page
     // asks, the host answers by calling window.Keymap.render().
     window.KeymapTransport.requestData();
 }());

@@ -101,7 +101,7 @@
     };
 
     // Self-initialise rather than relying on a trailing <script> in the page.
-    // The HammerGhost webview loses that tag: editor_window inlines the asset
+    // The webview surface loses that tag: the host inlines the asset
     // scripts by string substitution and WKWebView's parser then drops the
     // following inline block, so the picker rendered empty there while working
     // on the other two surfaces. Wiring it from here removes the tag entirely.

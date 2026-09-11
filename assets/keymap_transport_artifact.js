@@ -58,6 +58,7 @@
 
     window.KeymapTransport = {
         name: 'artifact',
+        canBrowse: false,
         appliesLive: false,
 
         requestData: function () {
