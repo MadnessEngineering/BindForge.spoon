@@ -36,9 +36,17 @@ obj.license = "MIT - https://opensource.org/licenses/MIT"
 --- Your config drives this directly — `binder.load()`, `binder.applyAll()`.
 obj.binder = nil
 
--- Loaded on demand. Building a webview or opening a port at spoon-load time
--- would be rude; nothing here touches the screen until a hotkey asks it to.
-local window, server
+--- BindForge.window / BindForge.server
+--- Variable
+--- The two editor surfaces, once something has opened them — nil until then.
+--- Exposed so a console or a health check can see their state
+--- (`spoon.BindForge.window.win`, `spoon.BindForge.server.isRunning()`)
+--- rather than having to guess at it.
+---
+--- Loaded on demand: building a webview or opening a port at spoon-load time
+--- would be rude, so nothing here touches the screen until a hotkey asks.
+obj.window = nil
+obj.server = nil
 
 --- Load a surface script and point it at this spoon's assets.
 ---
@@ -77,8 +85,8 @@ end
 --- Method
 --- Opens the editor in a Hammerspoon window, or closes it if it is already up.
 function obj:toggleWindow()
-    window = window or scripts("window.lua")
-    return window.toggle()
+    self.window = self.window or scripts("window.lua")
+    return self.window.toggle()
 end
 
 --- BindForge:toggleServer()
@@ -86,16 +94,16 @@ end
 --- Serves the editor to a browser tab on localhost, or stops the server.
 --- Token-gated, no CORS headers, localhost interface only.
 function obj:toggleServer()
-    server = server or scripts("server.lua")
-    return server.toggle()
+    self.server = self.server or scripts("server.lua")
+    return self.server.toggle()
 end
 
 --- BindForge:serverURL()
 --- Method
 --- The running server's URL, or nil when it is stopped.
 function obj:serverURL()
-    if not server then return nil end
-    return server.isRunning() and server.url() or nil
+    if not self.server then return nil end
+    return self.server.isRunning() and self.server.url() or nil
 end
 
 --- BindForge:reloadBindings()
