@@ -36,6 +36,17 @@ obj.license = "MIT - https://opensource.org/licenses/MIT"
 --- Your config drives this directly — `binder.load()`, `binder.applyAll()`.
 obj.binder = nil
 
+--- BindForge.actionSystem
+--- Variable
+--- Optional. A host may register a table with `executeAction(spec)` and
+--- `getActionTypesForUI()`, which turns on the editor's "action" binding kind
+--- and lets bindings dispatch through it. Set it before `:start()`:
+---
+---   spoon.BindForge.actionSystem = myActionSystem
+---
+--- Without one, the editor offers only "call" and "none" — which is how the
+--- same editor serves a config that has an action system and one that does not.
+
 --- BindForge.window / BindForge.server
 --- Variable
 --- The two editor surfaces, once something has opened them — nil until then.
@@ -69,6 +80,9 @@ function obj:init()
     -- returns the same table rather than starting a rival set of hs.hotkey
     -- handles that would shadow the first.
     self.binder = rawget(_G, "_HotkeyBinder") or dofile(hs.spoons.resourcePath("HotkeyBinder.lua"))
+    -- Hand any registered action system to the binder, which is what both
+    -- dispatch and the editor's dropdown read it from.
+    if self.actionSystem then self.binder.actionSystem = self.actionSystem end
     return self
 end
 
@@ -77,6 +91,7 @@ end
 --- Reads `hotkeys.json` and binds everything in it. Returns the number bound.
 function obj:start()
     if not self.binder then self:init() end
+    if self.actionSystem then self.binder.actionSystem = self.actionSystem end
     self.binder.load()
     return self.binder.applyAll()
 end

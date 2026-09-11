@@ -39,6 +39,31 @@ local HotkeyBinder = {}
 _G._HotkeyBinder = HotkeyBinder
 
 HotkeyBinder.path = hs.configdir .. "/hotkeys.json"
+
+--- An optional host-provided action system: a table with `executeAction(spec)`
+--- and, for the editor's dropdown, `getActionTypesForUI()`. Set it via
+--- `spoon.BindForge.actionSystem = ...`. Without one, bindings of kind
+--- "action" cannot fire and the editor does not offer the option.
+HotkeyBinder.actionSystem = nil
+
+--- Resolve it, preferring what the host registered and falling back to the
+--- global HammerGhost's action_system has always stashed itself on, so that
+--- config keeps working without changes.
+function HotkeyBinder.getActionSystem()
+    return HotkeyBinder.actionSystem or rawget(_G, "_HammerGhostActionSystem")
+end
+
+--- The action types the editor should offer, or {} when there is no system.
+--- getActionTypesForUI strips the handler closures: hs.json.encode returns nil
+--- for any table holding a function, which would silently blank the dropdown.
+function HotkeyBinder.actionTypes()
+    local asys = HotkeyBinder.getActionSystem()
+    if asys and asys.getActionTypesForUI then
+        local ok, types = pcall(asys.getActionTypesForUI)
+        if ok and type(types) == "table" then return types end
+    end
+    return {}
+end
 HotkeyBinder.config = nil
 HotkeyBinder.handles = {}  -- id -> hs.hotkey object, so a single binding can be replaced
 HotkeyBinder.errors = {}   -- load/bind problems, surfaced to the keymap UI
@@ -129,11 +154,9 @@ local function makeHandler(binding)
             end
             if not ok then reportFailure(binding, tostring(callErr)) end
         elseif kind == "action" then
-            -- action_system stashes itself on this global (it is dofile'd from
-            -- several places and must be one shared registry).
-            local asys = rawget(_G, "_HammerGhostActionSystem")
+            local asys = HotkeyBinder.getActionSystem()
             if not asys then
-                return reportFailure(binding, "HammerGhost action system not loaded")
+                return reportFailure(binding, "no action system registered")
             end
             local ok, callErr = pcall(asys.executeAction, {
                 actionType = action.actionType,

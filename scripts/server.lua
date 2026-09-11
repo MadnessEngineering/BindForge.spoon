@@ -87,9 +87,9 @@ function Server.buildPayload()
     end
     for _, bad in ipairs(B.verify()) do problems[bad.id] = bad.error end
 
-    -- This config binds keys to functions only, so the editor is told there
-    -- are no "action types" and hides that half of the form.
-    local actionTypes = {}
+    -- Whatever action system the host registered, or {} for none -- the editor
+    -- offers the "action" kind only when this is non-empty.
+    local actionTypes = B.actionTypes and B.actionTypes() or {}
 
     return {
         bindings = (B.config or {}).bindings or {},

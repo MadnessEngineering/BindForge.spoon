@@ -56,9 +56,18 @@ itself, so the editor's own keys are editable in the editor.
 ```
 
 `mods` is a named set or an explicit list. `action.kind` is `call` (a dotted
-path to a function, plus optional `args`), `none` (reserve the key), or `action`
-— which hands off to a host-provided action system and is only offered in the
-editor when the host advertises one.
+path to a function, plus optional `args`), `none` (reserve the key), or `action`.
+
+`action` hands off to a host-provided action system, and the editor offers that
+kind only when one is registered:
+
+```lua
+spoon.BindForge.actionSystem = myActionSystem   -- executeAction(spec)
+                                                -- getActionTypesForUI()
+```
+
+That is what lets one editor serve a config with an action system and one
+without, rather than each carrying its own edit.
 
 Function paths resolve **at press time**, so a binding may point at something
 that does not exist yet — a Spoon loaded later, say — and a module reloaded in

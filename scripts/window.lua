@@ -76,9 +76,11 @@ function Window.buildPayload()
     return {
         bindings = (B.config or {}).bindings or {},
         modifierSets = (B.config or {}).modifierSets or {},
-        -- This config binds keys to functions only, so the editor is told there
-        -- are no "action types" and hides that half of the form.
-        actionTypes = {},
+        -- Whatever action system the host registered, or {} for none -- the
+        -- editor offers the "action" kind only when this is non-empty, which
+        -- is what lets one editor serve a config with an action system and one
+        -- without.
+        actionTypes = B.actionTypes and B.actionTypes() or {},
         problems = problems,
         -- Autocomplete source for the function-path field. A hint, not a
         -- whitelist: paths resolve at press time, so one missing from here can
